@@ -110,6 +110,28 @@ export function lory (slider, opts) {
     }
 
     /**
+    * private
+    * findNextIndex function: returns next displayed slide
+    * from current in given direction considering slidesToScroll
+    *
+    * @fromIndex    {number} index of slide from which to seek
+    * @forward      {boolean} direction
+    * @return       {number} index of next slide
+    */
+    function findNextIndex (fromIndex, forward) {
+        const {slidesToScroll} = options;
+        let i;
+        let direction = forward ? 1 : -1;
+        let nextIndex = fromIndex + (slidesToScroll * direction);
+        for (i = nextIndex; forward ? (i <= slides.length - 1) : (i >= 0); i += direction) {
+            if (slides[i].offsetParent !== null) {
+                break;
+            }
+        }
+        return i;
+    }
+
+    /**
      * slidefunction called by prev, next & touchend
      *
      * determine nextIndex and slide to next postion
@@ -120,7 +142,6 @@ export function lory (slider, opts) {
     function slide (nextIndex, direction) {
         const {
             slideSpeed,
-            slidesToScroll,
             infinite,
             rewind,
             rewindSpeed,
@@ -139,11 +160,7 @@ export function lory (slider, opts) {
         });
 
         if (typeof nextIndex !== 'number') {
-            if (direction) {
-                nextIndex = index + slidesToScroll;
-            } else {
-                nextIndex = index - slidesToScroll;
-            }
+            nextIndex = findNextIndex(index, direction);
         }
 
         nextIndex = Math.min(Math.max(nextIndex, 0), slides.length - 1);
@@ -158,6 +175,16 @@ export function lory (slider, opts) {
             nextOffset = 0;
             nextIndex = 0;
             duration = rewindSpeed;
+        }
+
+        if (nextOffset === 0 && slides[0].offsetParent === null) {
+            for (let i = 1; i <= slides.length - 1; i++) {
+                if (slides[i].offsetParent !== null && slides[i].offsetLeft !== 0) {
+                    nextOffset = slides[i].offsetLeft * -1;
+                    nextIndex = i;
+                    break;
+                }
+            }
         }
 
         /**
