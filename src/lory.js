@@ -172,20 +172,16 @@ export function lory (slider, opts) {
         let nextOffset = Math.min(Math.max(slides[nextIndex].offsetLeft * -1, maxOffset * -1), 0);
 
         if (rewind && Math.abs(position.x) === maxOffset && direction) {
-            nextOffset = 0;
-            nextIndex = 0;
+            if (slides[0].offsetParent === null) {
+                nextIndex = findNextIndex(0, true);
+                nextOffset = slides[nextIndex].offsetLeft;
+            } else {
+                nextIndex = 0;
+                nextOffset = 0;
+            }
             duration = rewindSpeed;
         }
 
-        if (nextOffset === 0 && slides[0].offsetParent === null) {
-            for (let i = 1; i <= slides.length - 1; i++) {
-                if (slides[i].offsetParent !== null && slides[i].offsetLeft !== 0) {
-                    nextOffset = slides[i].offsetLeft * -1;
-                    nextIndex = i;
-                    break;
-                }
-            }
-        }
 
         /**
          * translate to the nextOffset by a defined duration and ease function
@@ -307,6 +303,10 @@ export function lory (slider, opts) {
         }
 
         index = 0;
+        if (slides[index].offsetParent === null) {
+            index = findNextIndex(index, true);
+        }
+        position.x = slides[index].offsetLeft;
 
         if (infinite) {
             translate(slides[index + infinite].offsetLeft * -1, 0, null);
