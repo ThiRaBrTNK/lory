@@ -202,19 +202,45 @@ return /******/ (function(modules) { // webpackBootstrap
 	    * @forward      {boolean} direction
 	    * @return       {number} index of next slide
 	    */
-	    function findNextIndex(fromIndex, forward) {
+	    function findNextIndex(fromIndex, forward, rewind) {
 	        var _options3 = options;
 	        var slidesToScroll = _options3.slidesToScroll;
 
-	        var i = void 0;
+	        var isFound = false;
 	        var direction = forward ? 1 : -1;
 	        var nextIndex = fromIndex + slidesToScroll * direction;
-	        for (i = nextIndex; forward ? i <= slides.length - 1 : i >= 0; i += direction) {
-	            if (slides[i].offsetParent !== null) {
+	        var maxOffset = Math.round(slidesWidth - frameWidth);
+	        if (rewind) {
+	            if (nextIndex < 0) {
+	                nextIndex = slides.length - 1;
+	            } else if (nextIndex > slides.length - 1) {
+	                nextIndex = 0;
+	            }
+	        } else {
+	            nextIndex = Math.min(Math.max(nextIndex, 0), slides.length - 1);
+	        }
+	        for (var i = nextIndex; forward ? i <= slides.length - 1 : i >= 0; i += direction) {
+	            if (slides[i].offsetParent !== null && slides[i].offsetLeft <= maxOffset) {
+	                nextIndex = i;
+	                isFound = true;
 	                break;
 	            }
 	        }
-	        return i;
+	        if (!isFound) {
+	            if (forward) {
+	                nextIndex = 0;
+	            } else {
+	                nextIndex = slides.length - 1;
+	            }
+	            for (var _i = nextIndex; forward ? _i <= slides.length - 1 : _i >= 0; _i += direction) {
+	                if (slides[_i].offsetParent !== null && slides[_i].offsetLeft <= maxOffset) {
+	                    nextIndex = _i;
+	                    isFound = true;
+	                    break;
+	                }
+	            }
+	        }
+	        return nextIndex;
 	    }
 
 	    /**
@@ -246,7 +272,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 
 	        if (typeof nextIndex !== 'number') {
-	            nextIndex = findNextIndex(index, direction);
+	            nextIndex = findNextIndex(index, direction, rewind);
 	        }
 
 	        nextIndex = Math.min(Math.max(nextIndex, 0), slides.length - 1);
@@ -258,25 +284,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var nextOffset = Math.min(Math.max(slides[nextIndex].offsetLeft * -1, maxOffset * -1), 0);
 
 	        if (rewind && Math.abs(position.x) === maxOffset && direction) {
-	            if (slides[0].offsetParent === null) {
-	                nextIndex = findNextIndex(0, true);
-	                nextOffset = slides[nextIndex].offsetLeft;
-	            } else {
-	                nextIndex = 0;
-	                nextOffset = 0;
-	            }
+	            // nextOffset = 0;
+	            // nextIndex = 0;
 	            duration = rewindSpeed;
 	        }
-
-	        // if (nextOffset === 0 && slides[0].offsetParent === null) {
-	        //     for (let i = 1; i <= slides.length - 1; i++) {
-	        //         if (slides[i].offsetParent !== null && slides[i].offsetLeft !== 0) {
-	        //             nextOffset = slides[i].offsetLeft * -1;
-	        //             nextIndex = i;
-	        //             break;
-	        //         }
-	        //     }
-	        // }
 
 	        /**
 	         * translate to the nextOffset by a defined duration and ease function
@@ -400,10 +411,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 
 	        index = 0;
-	        if (slides[index].offsetParent === null) {
-	            index = findNextIndex(index, true);
-	        }
-	        position.x = slides[index].offsetLeft;
 
 	        if (infinite) {
 	            translate(slides[index + infinite].offsetLeft * -1, 0, null);
